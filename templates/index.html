@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Group Detection</title>
+    <style>
+        :root {
+            --primary: #d91e36;
+            --primary-dark: #b31a2e;
+            --primary-light: #ffccd5;
+            --secondary: #2c4c7c;
+            --tertiary: #1a365d;
+            --light: #f8fafc;
+            --dark: #172b4d;
+            --gray: #e2e8f0;
+            --success: #0d9488;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(to right, #f0f9ff, #e6f7ff);
+            color: var(--dark);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+            overflow-x: hidden;
+        }
+        
+        .app-container {
+            display: flex;
+            width: 90%;
+            max-width: 1200px;
+            min-height: 600px;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* Updated sidebar with red cloud background */
+        .sidebar {
+            width: 25%;
+            background: #d91e36; /* Red background */
+            padding: 2.5rem 1.5rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            color: white;
+            overflow: hidden;
+        }
+        
+        /* Cloud shapes for sidebar */
+        .sidebar::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 50%),
+                radial-gradient(circle at 80% 40%, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 60%),
+                radial-gradient(circle at 10% 60%, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 40%),
+                radial-gradient(circle at 90% 90%, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 50%);
+            z-index: 0;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background-color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-weight: bold;
+            font-size: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .logo-icon::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 50%);
+        }
+        
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .sidebar-menu {
+            margin-top: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .menu-item {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+        
+        .menu-item.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .menu-icon {
+            margin-right: 12px;
+            opacity: 0.85;
+        }
+        
+        /* Enhanced nature-themed main content */
+        .main-content {
+            width: 75%;
+            padding: 2.5rem;
+            position: relative;
+            overflow-y: auto;
+            background: linear-gradient(to right, #ffffff, #f0f9ff);
+        }
+        
+        /* Nature theme background */
+        .main-content::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 600' width='200' height='600'%3E%3Cstyle%3E.leaf%7Bfill:%2366bb6a;opacity:0.7%7D .woman%7Bfill:%23795548%7D .mask%7Bfill:%23e0e0e0%7D%3C/style%3E%3C!-- Leaves pattern --%3E%3Cpath class='leaf' d='M160,50 Q180,20 200,40 Q170,60 160,50 Z'/%3E%3Cpath class='leaf' d='M170,100 Q200,80 190,120 Q160,110 170,100 Z'/%3E%3Cpath class='leaf' d='M150,150 Q180,130 190,170 Q150,180 150,150 Z'/%3E%3Cpath class='leaf' d='M180,200 Q200,180 195,220 Q165,210 180,200 Z'/%3E%3Cpath class='leaf' d='M160,250 Q190,230 185,270 Q155,260 160,250 Z'/%3E%3C!-- Woman with mask --%3E%3Ccircle class='woman' cx='180' cy='370' r='25'/%3E%3Cpath class='woman' d='M155,400 Q180,430 205,400 L205,450 Q180,470 155,450 Z'/%3E%3Cpath class='mask' d='M165,370 Q180,385 195,370 Q195,380 180,390 Q165,380 165,370 Z'/%3E%3Cline x1='180' y1='370' x2='180' y2='385' stroke='%23795548' stroke-width='1'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right center;
+            opacity: 0.3;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .page-header {
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .page-subtitle {
+            color: #64748b;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        
+        /* Enhanced blood drop animation for heading */
+        .blood-drop-animation {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+            vertical-align: middle;
+        }
+        
+        .drop {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            box-shadow: 0 3px 10px rgba(217, 30, 54, 0.4),
+                        0 0 20px rgba(217, 30, 54, 0.2);
+            transform-origin: center bottom;
+            animation: drip 2s infinite ease-in-out;
+        }
+        
+        .drop::before {
+            content: "";
+            position: absolute;
+            top: 15%;
+            left: 20%;
+            width: 30%;
+            height: 30%;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            filter: blur(1px);
+        }
+        
+        .drop::after {
+            content: "";
+            position: absolute;
+            bottom: -5px;
+            left: 5px;
+            right: 5px;
+            height: 10px;
+            background-color: rgba(217, 30, 54, 0.3);
+            border-radius: 50%;
+            filter: blur(3px);
+            z-index: -1;
+        }
+        
+        /* Ripple effect for blood drop */
+        .ripple {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--primary);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            opacity: 0;
+            animation: ripple 2s infinite ease-out;
+        }
+        
+        @keyframes ripple {
+            0% {
+                width: 0%;
+                height: 0%;
+                opacity: 0.5;
+            }
+            100% {
+                width: 200%;
+                height: 200%;
+                opacity: 0;
+            }
+        }
+        
+        @keyframes drip {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(0.9) translateY(5px);
+                box-shadow: 0 10px 15px rgba(217, 30, 54, 0.3),
+                            0 0 20px rgba(217, 30, 54, 0.2);
+            }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 1.5rem;
+            border: 1px solid #edf2f7;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            font-size: 1.125rem;
+            color: var(--dark);
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .upload-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #e2e8f0;
+            border-radius: 10px;
+            background-color: #f8fafc;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--secondary);
+            background-color: #f0f9ff;
+        }
+        
+        .upload-icon {
+            height: 64px;
+            width: 64px;
+            background-color: #ebf5ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.25rem;
+        }
+        
+        .upload-icon svg {
+            width: 32px;
+            height: 32px;
+            color: var(--secondary);
+        }
+        
+        .upload-text {
+            margin-bottom: 1.5rem;
+            color: #4a5568;
+        }
+        
+        .upload-text h3 {
+            font-weight: 600;
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+        
+        .upload-text p {
+            font-size: 0.9375rem;
+            color: #718096;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.625rem 1.25rem;
+            font-weight: 500;
+            font-size: 0.9375rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 6px -1px rgba(217, 30, 54, 0.2), 0 2px 4px -1px rgba(217, 30, 54, 0.1);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(217, 30, 54, 0.2), 0 4px 6px -2px rgba(217, 30, 54, 0.1);
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: var(--secondary);
+            border: 1px solid #e2e8f0;
+            margin-right: 0.75rem;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e0;
+        }
+        
+        .btn-icon {
+            margin-right: 0.5rem;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background-color: #f8fafc;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .file-info.hidden {
+            display: none;
+        }
+        
+        .file-icon {
+            margin-right: 0.75rem;
+            color: var(--secondary);
+        }
+        
+        .file-details {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-weight: 500;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+            font-size: 0.9375rem;
+        }
+        
+        .file-size {
+            font-size: 0.8125rem;
+            color: #718096;
+        }
+        
+        .remove-file {
+            color: #a0aec0;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        
+        .remove-file:hover {
+            color: var(--primary);
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+        
+        .result-section {
+            margin-top: 2rem;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .result-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .result-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+        
+        .result-subtitle {
+            color: #718096;
+            font-size: 0.9375rem;
+        }
+        
+        .result-content {
+            padding: 1.5rem;
+            display: flex;
+        }
+        
+        .result-info {
+            flex: 1;
+        }
+        
+        .blood-group-label {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #718096;
+            margin-bottom: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .blood-group-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .blood-group-value::after {
+            content: "";
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--primary-light);
+            border-radius: 2px;
+        }
+        
+        .confidence-meter {
+            margin-bottom: 1.5rem;
+        }
+        
+        .confidence-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: #718096;
+            margin-bottom: 0.5rem;
+        }
+        
+        .confidence-label span:last-child {
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background-color: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-value {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background-color: var(--success);
+            border-radius: 4px;
+        }
+        
+        .result-image {
+            flex: 1;
+            padding-left: 1.5rem;
+        }
+        
+        .image-container {
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .image-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .error-message {
+            padding: 1rem;
+            background-color: #fef2f2;
+            border-left: 4px solid var(--primary);
+            color: #b91c1c;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.9375rem;
+        }
+        
+        /* Blood Droplet Animation */
+        .blood-drop-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .blood-drop {
+            position: absolute;
+            top: -50px;
+            background-color: var(--primary);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            box-shadow: 0 4px 8px rgba(217, 30, 54, 0.3);
+            transform-origin: center bottom;
+            opacity: 0;
+            animation: falling 4s infinite ease-in;
+        }
+        
+        /* Add a blood cell pattern to the app background */
+        .blood-cell-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.97);
+            background-image: radial-gradient(var(--primary-light) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            opacity: 0.3;
+        }
+        
+        @keyframes falling {
+            0% {
+                transform: translateY(0) scaleX(1) scaleY(1);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.8;
+            }
+            70% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(calc(100vh + 50px)) scaleX(0.9) scaleY(1.1);
+                opacity: 0;
+            }
+        }
+        
+        /* Pulsating animation for blood group */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .result-pulse {
+            animation: pulse 2s infinite ease-in-out;
+        }
+        
+        @media (max-width: 992px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 1.5rem;
+            }
+            
+            .main-content {
+                width: 100%;
+            }
+            
+            .result-content {
+                flex-direction: column;
+            }
+            
+            .result-image {
+                padding-left: 0;
+                margin-top: 1.5rem;
+            }
+            
+            .main-content::before {
+                width: 100%;
+                height: 200px;
+                background-position: right top;
+                opacity: 0.1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="blood-cell-background"></div>
+    <div class="blood-drop-container" id="blood-drop-container"></div>
+    
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <div class="drop" style="width: 20px; height: 20px;"></div>
+                </div>
+                <div class="logo-text">BloodScan Pro</div>
+            </div>
+            
+            <div class="sidebar-menu">
+                <div class="menu-item active">
+                    <span class="menu-icon">📊</span>
+                    Dashboard
+                </div>
+                </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <div class="blood-drop-animation">
+                        <div class="drop"></div>
+                        <div class="ripple"></div>
+                    </div>
+                    Blood Group Analysis
+                </h1>
+                <p class="page-subtitle">Upload a fingerprint image to determine blood group with advanced pattern recognition.</p>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Fingerprint Analysis</div>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="upload-area" id="upload-area">
+                            <div class="upload-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                            </div>
+                            <div class="upload-text">
+                                <h3>Upload Fingerprint Image</h3>
+                                <p>Supported formats: JPG, PNG, TIFF. Maximum size: 10MB</p>
+                            </div>
+                            <label for="file-input" class="btn btn-secondary">
+                                <span class="btn-icon">📁</span>
+                                Browse Files
+                            </label>
+                            <input id="file-input" type="file" name="file" accept="image/*" required>
+                        </div>
+                        
+                        <div class="file-info hidden" id="file-info">
+                            <div class="file-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div class="file-details">
+                                <div class="file-name" id="file-name">filename.jpg</div>
+                                <div class="file-size" id="file-size">0 KB</div>
+                            </div>
+                            <div class="remove-file" id="remove-file">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        {% if error %}
+                            <div class="error-message">
+                                {{ error }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="action-buttons">
+                            <button type="submit" class="btn btn-primary">
+                                <span class="btn-icon">🔍</span>
+                                Analyze Fingerprint
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if prediction %}
+            <div class="result-section">
+                <div class="card result-card">
+                    <div class="result-header">
+                        <h3 class="result-title">Analysis Results</h3>
+                        <p class="result-subtitle">Blood group identification based on dermatoglyphic patterns</p>
+                    </div>
+                    <div class="result-content">
+                        <div class="result-info">
+                            <div class="blood-group-label">Blood Group</div>
+                            <div class="blood-group-value result-pulse">
+                                <div class="blood-drop-animation" style="transform: scale(0.7); margin-right: 5px;">
+                                    <div class="drop"></div>
+                                </div>
+                                {{ prediction }}
+                            </div>
+                            
+                            <div class="confidence-meter">
+                                <div class="confidence-label">
+                                    <span>Confidence Level</span>
+                                    <span>{{ confidence }}</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-value" style="width: {{ confidence }};"></div>
+                                </div>
+                            </div>
+                            
+                            <div style="font-size: 0.9375rem; color: #4a5568;">
+                                <p>The analysis has identified potential blood group markers in the fingerprint pattern. For clinical confirmation, please consult with a healthcare professional.</p>
+                            </div>
+                        </div>
+                        <div class="result-image">
+                            <div class="image-container">
+                                <img src="{{ image_path }}" alt="Analyzed Fingerprint">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('file-input');
+            const fileInfo = document.getElementById('file-info');
+            const fileName = document.getElementById('file-name');
+            const fileSize = document.getElementById('file-size');
+            const removeFile = document.getElementById('remove-file');
+            const uploadArea = document.getElementById('upload-area');
+            const bloodDropContainer = document.getElementById('blood-drop-container');
+            
+            // Create blood droplets
+            function createBloodDrops() {
+                const numberOfDrops = 15;
+                
+                for (let i = 0; i < numberOfDrops; i++) {
+                    setTimeout(() => {
+                        const drop = document.createElement('div');
+                        drop.className = 'blood-drop';
+                        
+                        // Random size between 15px and 30px
+                        const size = Math.random() * 15 + 15;
+                        drop.style.width = `${size}px`;
+                        drop.style.height = `${size}px`;
+                        
+                        // Random horizontal position
+                        drop.style.left = `${Math.random() * 100}%`;
+                        
+                        // Random animation duration between 3s and 7s
+                        const animationDuration = Math.random() * 4 + 3;
+                        drop.style.animationDuration = `${animationDuration}s`;
+                        
+                        // Random delay
+                        drop.style.animationDelay = `${Math.random() * 5}s`;
+                        
+                        // Random opacity
+                        drop.style.opacity = Math.random() * 0.3 + 0.5;
+                        
+                        bloodDropContainer.appendChild(drop);
+                        
+                        // Remove the drop after animation completes
+                        setTimeout(() => {
+                            drop.remove();
+                        }, animationDuration * 1000);
+                    }, i * 200);
+                }
+            }
+            
+            // Initial creation of drops
+            createBloodDrops();
+            
+            // Continuously create new drops
+            setInterval(createBloodDrops, 5000);
+            
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            fileInput.addEventListener('change', function(e) {
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    fileName.textContent = file.name;
+                    fileSize.textContent = formatFileSize(file.size);
+                    fileInfo.classList.remove('hidden');
+                    uploadArea.style.borderStyle = 'solid';
+                    uploadArea.style.borderColor = '#4299e1';
+                    uploadArea.style.backgroundColor = '#ebf8ff';
+                }
+            });
+            
+            removeFile.addEventListener('click', function() {
+                fileInput.value = '';
+                fileInfo.classList.add('hidden');
+                uploadArea.style.borderStyle = 'dashed';
+                uploadArea.style.borderColor = '#e2e8f0';
+                uploadArea.style.backgroundColor = '#f8fafc';
+            });
+        });
+    </script>
+</body>
+</html>
