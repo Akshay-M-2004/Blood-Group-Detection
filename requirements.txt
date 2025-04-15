@@ -1,4 +1,5 @@
-
+setuptools
+wheel
 numpy==1.19.5
 seaborn==0.11.1
 matplotlib==3.4.2
